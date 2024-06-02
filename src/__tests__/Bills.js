@@ -72,22 +72,69 @@ describe('Given I am connected as an employee', () => {
 				localStorage: window.localStorage,
 			});
 
-			document.body.innerHTML = BillsUI({ data: bills });
-
 			const buttonNewBill = screen.getByRole('button', {
 				// On recup le bouton pour ajouter des bills
 				name: /nouvelle note de frais/i,
 			});
 
+			// On verifie que le bouton est present
 			expect(buttonNewBill).toBeTruthy();
 
+			// Ajoute les evenements au clique
 			const handleClickNewBill = jest.fn(bills.handleClickNewBill);
-
 			buttonNewBill.addEventListener('click', handleClickNewBill);
-
 			userEvent.click(buttonNewBill);
 
+			// On verifie que la methode handleClickNewBill => Si oui, le test est bon
 			expect(handleClickNewBill).toHaveBeenCalled();
+		});
+	});
+
+	describe('When I click on the icon eye', () => {
+		test('A modal should open', async () => {
+			const onNavigate = (pathname) => {
+				document.body.innerHTML = ROUTES({ pathname });
+			};
+
+			Object.defineProperty(window, 'localStorage', {
+				value: localStorageMock,
+			});
+
+			window.localStorage.setItem(
+				'user',
+				JSON.stringify({
+					type: 'Employee',
+				})
+			);
+
+			const billsDashboard = new Bills({
+				document,
+				onNavigate,
+				store: null,
+				bills: bills,
+				localStorage: window.localStorage,
+			});
+
+			// Simule un modal
+			$.fn.modal = jest.fn();
+
+			// Genere les bills sur le body
+			document.body.innerHTML = BillsUI({ data: bills });
+
+			// Sélectionne la première icône "eye" pour afficher la modal
+			const iconEye = screen.getAllByTestId('icon-eye')[0];
+
+			const handleClickIconEye = jest.fn(() => billsDashboard.handleClickIconEye(iconEye));
+			iconEye.addEventListener('click', handleClickIconEye);
+			userEvent.click(iconEye);
+
+			expect(handleClickIconEye).toHaveBeenCalled();
+			expect($.fn.modal).toHaveBeenCalled();
+
+			// Vérifie que la modal est affichée
+			await waitFor(() => {
+				expect(screen.getByTestId('modal')).toBeTruthy();
+			});
 		});
 	});
 });

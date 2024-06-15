@@ -60,7 +60,7 @@ describe('When I am on NewBill Page', () => {
 				target: {
 					files: [
 						new File(['document.jpg'], 'document.jpg', {
-							type: 'document/jpg',
+							type: 'image/jpeg',
 						}),
 					],
 				},
@@ -68,6 +68,36 @@ describe('When I am on NewBill Page', () => {
 
 			expect(handleChangeFile).toHaveBeenCalled();
 			expect(screen.getByText('Envoyer une note de frais')).toBeTruthy();
+		});
+
+		test('Then I add valid File', async () => {
+			const dashboard = new NewBill({
+				document,
+				onNavigate,
+				store: mockStore,
+				localStorage: localStorageMock,
+			});
+
+			const handleChangeFile = jest.fn(dashboard.handleChangeFile);
+			const inputFile = screen.getByTestId('file');
+			inputFile.addEventListener('change', handleChangeFile);
+			fireEvent.change(inputFile, {
+				target: {
+					files: [
+						new File(['document.jpg'], 'document.jpg', {
+							type: 'image/jpeg',
+						}),
+					],
+				},
+			});
+
+			expect(alertSpy).not.toHaveBeenCalled();
+
+			expect(handleChangeFile).toHaveBeenCalled();
+			expect(inputFile.files[0].name).toBe('document.jpg');
+			expect(dashboard.fileName).toBe('document.jpg');
+			expect(dashboard.isImgFormatValid).toBe(true);
+			expect(dashboard.formData).not.toBe(null);
 		});
 
 		test('Then I add invalid File', async () => {
@@ -122,6 +152,7 @@ describe('When I am on NewBill Page and submit the form', () => {
 				store: mockStore,
 				localStorage: localStorageMock,
 			});
+			newBill.isImgFormatValid = true;
 			const handleSubmit = jest.fn(newBill.handleSubmit);
 			const form = screen.getByTestId('form-new-bill');
 			form.addEventListener('submit', handleSubmit);

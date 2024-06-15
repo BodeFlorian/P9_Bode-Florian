@@ -17,41 +17,30 @@ export default class NewBill {
 	}
 
 	handleChangeFile = (e) => {
-		console.log(e.target.value);
 		e.preventDefault();
 		const file = this.document.querySelector(`input[data-testid="file"]`).files[0];
-		const filePath = e.target.value.split(/\\/g);
-		const fileName = filePath[filePath.length - 1];
+		const fileName = file.name;
 
-		//Fix bug fichier
+		this.isImgFormatValid = false;
 
 		if (fileName.match(/\.(jpg|jpeg|png|gif)$/)) {
+			this.isImgFormatValid = true;
+		} else {
+			this.isImgFormatValid = false;
+		}
+
+		if (!this.isImgFormatValid) {
+			alert('Veuillez choisir un fichier de type image');
+		} else {
+			// if image format is valid ...
 			const formData = new FormData();
 			const email = JSON.parse(localStorage.getItem('user')).email;
-			console.log(email);
 			formData.append('file', file);
 			formData.append('email', email);
-
-			this.store
-				.bills()
-				.create({
-					data: formData,
-					headers: {
-						noContentType: true,
-					},
-				})
-				.then(({ fileUrl, key }) => {
-					console.log(fileUrl);
-					this.billId = key;
-					this.fileUrl = fileUrl;
-					this.fileName = fileName;
-				})
-				.catch((error) => console.error(error));
-		} else {
-			alert('Veuillez choisir un fichier de type image');
+			this.formData = formData;
+			this.fileName = fileName;
 		}
 	};
-
 	handleSubmit = (e) => {
 		e.preventDefault();
 		console.log(
@@ -72,8 +61,26 @@ export default class NewBill {
 			fileName: this.fileName,
 			status: 'pending',
 		};
-		this.updateBill(bill);
-		this.onNavigate(ROUTES_PATH['Bills']);
+
+		if (this.isImgFormatValid) {
+			this.store
+				.bills()
+				.create({
+					data: this.formData,
+					headers: {
+						noContentType: true,
+					},
+				})
+				.then(({ fileUrl, key }) => {
+					console.log(fileUrl);
+					this.billId = key;
+					this.fileUrl = fileUrl;
+				})
+				.then(() => {
+					this.updateBill(bill);
+				})
+				.catch((error) => console.error(error));
+		}
 	};
 
 	// not need to cover this function by tests

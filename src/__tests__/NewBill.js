@@ -10,6 +10,7 @@ import NewBill from '../containers/NewBill.js';
 import { ROUTES_PATH } from '../constants/routes.js';
 import { localStorageMock } from '../__mocks__/localStorage.js';
 import router from '../app/Router.js';
+import userEvent from '@testing-library/user-event';
 
 jest.mock('../app/Store', () => mockStore);
 
@@ -44,31 +45,6 @@ describe('When I am on NewBill Page', () => {
 
 		afterEach(() => {
 			alertSpy.mockRestore();
-		});
-
-		test('Then I add File', async () => {
-			const dashboard = new NewBill({
-				document,
-				onNavigate,
-				store: mockStore,
-				localStorage: localStorageMock,
-			});
-
-			const handleChangeFile = jest.fn(dashboard.handleChangeFile);
-			const inputFile = screen.getByTestId('file');
-			inputFile.addEventListener('change', handleChangeFile);
-			fireEvent.change(inputFile, {
-				target: {
-					files: [
-						new File(['document.jpg'], 'document.jpg', {
-							type: 'image/jpeg',
-						}),
-					],
-				},
-			});
-
-			expect(handleChangeFile).toHaveBeenCalled();
-			expect(screen.getByText('Envoyer une note de frais')).toBeTruthy();
 		});
 
 		test('Then I add valid File', async () => {
@@ -147,18 +123,66 @@ describe('When I am on NewBill Page and submit the form', () => {
 
 	describe('user submit form valid', () => {
 		test('call api update bills', async () => {
+			const form = screen.getByTestId('form-new-bill');
+			const inputExpenseType = screen.getByTestId('expense-type');
+			const inputExpenseName = screen.getByTestId('expense-name');
+			const inputDatepicker = screen.getByTestId('datepicker');
+			const inputAmount = screen.getByTestId('amount');
+			const inputVAT = screen.getByTestId('vat');
+			const inputPCT = screen.getByTestId('pct');
+			const inputCommentary = screen.getByTestId('commentary');
+			const inputFile = screen.getByTestId('file');
+
+			// Données à insérer
+			const inputData = {
+				type: 'Transports',
+				name: 'Test',
+				datepicker: '2024-01-21',
+				amount: '1000',
+				vat: '20',
+				pct: '20',
+				commentary: 'Test Data',
+				file: new File(['test'], 'test.jpeg', { type: 'image/jpeg' }),
+			};
+
+			// Insérer les données simulées
+			fireEvent.change(inputExpenseType, {
+				target: { value: inputData.type },
+			});
+			fireEvent.change(inputExpenseName, {
+				target: { value: inputData.name },
+			});
+			fireEvent.change(inputDatepicker, {
+				target: { value: inputData.datepicker },
+			});
+			fireEvent.change(inputAmount, { target: { value: inputData.amount } });
+			fireEvent.change(inputVAT, { target: { value: inputData.vat } });
+			fireEvent.change(inputPCT, { target: { value: inputData.pct } });
+			fireEvent.change(inputCommentary, {
+				target: { value: inputData.commentary },
+			});
+			userEvent.upload(inputFile, inputData.file);
+
+			const onNavigate = (pathname) => {
+				document.body.innerHTML = ROUTES({ pathname });
+			};
+
 			const newBill = new NewBill({
 				document,
 				onNavigate,
 				store: mockStore,
 				localStorage: localStorageMock,
 			});
+
 			newBill.isImgFormatValid = true;
 			const handleSubmit = jest.fn(newBill.handleSubmit);
-			const form = screen.getByTestId('form-new-bill');
 			form.addEventListener('submit', handleSubmit);
 			fireEvent.submit(form);
 			expect(mockStore.bills).toHaveBeenCalled();
+
+			// On check la redirection vers la page Bills, ce qui veut dire que le formulaire a bien été submit
+			await waitFor(() => screen.getByText('Mes notes de frais'));
+			expect(screen.getByText('Mes notes de frais')).toBeTruthy();
 		});
 	});
 });
@@ -210,7 +234,6 @@ describe('When I navigate to Dashboard employee', () => {
 				const newBill = new NewBill({ document, onNavigate, store, localStorage });
 				newBill.isImgFormatValid = true;
 
-				// Submit form
 				const form = screen.getByTestId('form-new-bill');
 				const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
 				form.addEventListener('submit', handleSubmit);
@@ -231,7 +254,6 @@ describe('When I navigate to Dashboard employee', () => {
 				const newBill = new NewBill({ document, onNavigate, store, localStorage });
 				newBill.isImgFormatValid = true;
 
-				// Submit form
 				const form = screen.getByTestId('form-new-bill');
 				const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
 				form.addEventListener('submit', handleSubmit);

@@ -47,7 +47,7 @@ describe('Given I am connected as an employee', () => {
 	});
 
 	describe('When I click on New Bill Button', () => {
-		test('Then we sould be redirect on New Bill form', () => {
+		test('Then we sould be redirect on New Bill form', async () => {
 			const onNavigate = (pathname) => {
 				document.body.innerHTML = ROUTES({ pathname });
 			};
@@ -86,7 +86,12 @@ describe('Given I am connected as an employee', () => {
 			userEvent.click(buttonNewBill);
 
 			// On verifie que la methode handleClickNewBill => Si oui, le test est bon
-			expect(handleClickNewBill).toHaveBeenCalled();
+			await waitFor(() => {
+				expect(handleClickNewBill).toHaveBeenCalled();
+			});
+
+			// On verifie qu'on a bien été redirigé en checkant si le texte "type de dépense" est bien present.
+			expect(screen.getByText('Type de dépense')).toBeTruthy();
 		});
 	});
 
@@ -189,6 +194,10 @@ describe('Given I am connected as an employee', () => {
 		test('fetches bills from an API', async () => {
 			const bills = await mockStore.bills().list();
 			expect(bills.length).toBe(4);
+
+			window.onNavigate(ROUTES_PATH.Bills);
+			const contentPending = await screen.getByText('Mes notes de frais');
+			expect(contentPending).toBeTruthy();
 		});
 	});
 });
